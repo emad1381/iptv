@@ -158,7 +158,7 @@ const HTML_SOURCE = `<!doctype html>
     .replace(/'/g, '&#39;');
 
   function encodeB64Url(input) {
-    return btoa(unescape(encodeURIComponent(input))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+    return btoa(unescape(encodeURIComponent(input))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
   }
 
   function scoreBadge(ms, segments) {

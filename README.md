@@ -1,72 +1,36 @@
 # NeonStream IPTV Worker
 
-A complete Cloudflare Worker project for a **stylish IPTV dashboard** with:
+Cloudflare Worker IPTV dashboard with a modern UI, **working day/night switch**, smooth HLS playback, channel diagnostics, and global IPTV search.
 
-- ✨ Fully refreshed UI/UX (glassmorphism + modern layout)
-- 🌞 Day / 🌙 Night theme switching
-- ▶️ Smooth HLS playback using `hls.js` with recovery logic
-- 🛰️ Secure stream proxying for `.m3u8`, segments, and key URIs
-- ☁️ Persistent channel storage in Cloudflare KV
+## What this build includes
 
----
+- Modern stylish UI/UX (glassmorphism + responsive layout)
+- Day / Night mode toggle with persistent state (`localStorage`)
+- Channel add/delete/play with Cloudflare KV persistence
+- Stream diagnostics test per channel (`/test-stream`) with quality grading
+- Global search from IPTV-org datasets (channels + streams + countries)
+- HLS proxy with playlist URI rewriting for segments/keys and CORS-friendly playback
 
-## Features
+## Files
 
-### 1) New visual experience
-- Modern two-panel layout (library + player)
-- Glass cards, gradient background, and improved visual hierarchy
-- Status pills for playback state, quality, and latency
-
-### 2) Day/Night mode
-- Theme toggle button in the header
-- Theme preference stored in `localStorage`
-
-### 3) Smooth playback and resilience
-- HLS.js low-latency mode enabled
-- Adaptive quality switching
-- Automatic handling for network/media errors (`startLoad`, `recoverMediaError`)
-- Native Safari HLS fallback if HLS.js is not supported
-
-### 4) Channel management
-- Add and delete channels from the UI
-- Save channel list to Cloudflare KV
-- Read channel list from KV at page load
-
-### 5) Proxy and CORS bypass
-- Proxy endpoint rewrites master/media playlists and key URIs
-- Segments and keys are served with CORS-friendly headers
-- Maintains query parameters when required by strict providers
-
----
-
-## Project structure
-
-- `worker.js` — Worker logic + embedded frontend
-- `README.md` — This documentation
-
----
-
-## Requirements
-
-- Cloudflare account
-- Wrangler CLI (`npm i -g wrangler`)
-- A KV namespace for channels
-
----
+- `worker.js` — Full Worker backend + embedded frontend
+- `README.md` — Setup and usage docs
 
 ## Setup
 
-### 1) Create KV namespace
+1. Install Wrangler:
+
+```bash
+npm i -g wrangler
+```
+
+2. Create KV namespace:
 
 ```bash
 wrangler kv namespace create IPTV_KV
 ```
 
-Copy the returned namespace id.
-
-### 2) Configure `wrangler.toml`
-
-Create/update your config:
+3. Configure `wrangler.toml`:
 
 ```toml
 name = "neonstream-iptv"
@@ -78,83 +42,33 @@ binding = "IPTV_KV"
 id = "<YOUR_NAMESPACE_ID>"
 ```
 
-### 3) Run locally
+4. Run locally:
 
 ```bash
 wrangler dev
 ```
 
-Open the local URL and use the UI to add channels.
-
-### 4) Deploy
+5. Deploy:
 
 ```bash
 wrangler deploy
 ```
 
----
-
 ## API routes
 
-### `GET /`
-Serves the dashboard HTML.
+- `GET /` — dashboard
+- `GET /api/channels` — fetch channel list from KV
+- `POST /api/channels` — save channel list to KV
+- `HEAD /api/ping` — quick ping endpoint
+- `GET /test-stream?url=...` — channel diagnostics (ping + segment count)
+- `GET /proxy/:base64/:filename?` — proxy stream, rewrite m3u8 URIs
 
-### `GET /api/channels`
-Returns channels from KV, or fallback sample channels.
+## Notes
 
-### `POST /api/channels`
-Saves the full channel array to KV.
-
-**Payload example**
-```json
-[
-  { "name": "BBC News", "url": "https://example.com/live.m3u8" }
-]
-```
-
-### `HEAD /api/ping`
-Quick health endpoint for latency checks.
-
-### `GET /proxy/:base64/:filename?`
-Proxy endpoint for playlists and media segments.
-
-- Decodes URL-safe base64 target URL
-- Fetches upstream stream resource
-- Rewrites playlist URIs to route all nested resources through proxy
-
----
-
-## Notes for stream compatibility
-
-- Prefer direct `.m3u8` URLs (master or media playlists).
-- Some providers enforce geo/IP restrictions; the Worker can only proxy reachable sources.
-- If a stream fails, test the source URL directly first.
-
----
-
-## Security / operational notes
-
-- This project intentionally keeps write API simple.
-- For production hardening, add auth for `POST /api/channels` and optional rate limits.
-- Do not store private stream credentials in public repositories.
-
----
-
-## Troubleshooting
-
-### Channels don't save
-- Confirm KV binding is named exactly `IPTV_KV`.
-- Check Wrangler logs for Worker errors.
-
-### Black screen / buffering
-- Verify stream URL is valid and live.
-- Some streams block non-browser clients; proxy headers help but cannot bypass all DRM/protected endpoints.
-
-### Theme not persisting
-- Ensure browser allows `localStorage` for the site origin.
-
----
+- Use direct `.m3u8` URLs where possible.
+- Some streams are geoblocked or provider-blocked and may fail regardless of proxy.
+- If channels are not saving, verify KV binding name is exactly `IPTV_KV`.
 
 ## License
 
-MIT (see `LICENSE`).
+MIT (`LICENSE`).

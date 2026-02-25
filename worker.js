@@ -472,18 +472,9 @@ const HTML_SOURCE = `<!doctype html>
   $('video').addEventListener('playing', () => setState('playing', 'ok'));
   $('video').addEventListener('error', () => setState('video error', 'bad'));
 
-  try {
-    applyTheme(localStorage.getItem(THEME_KEY) || 'night');
-    loadChannels();
-    startLatencyLoop();
-  } catch (err) {
-    console.error('Bootstrap failed:', err);
-    const p = document.createElement('p');
-    p.className = 'tiny';
-    p.style.color = 'var(--bad)';
-    p.textContent = 'UI init error: ' + (err && err.message ? err.message : String(err));
-    document.body.prepend(p);
-  }
+  applyTheme(localStorage.getItem(THEME_KEY) || 'night');
+  loadChannels();
+  startLatencyLoop();
 })();
 </script>
 </body>

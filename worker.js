@@ -158,7 +158,8 @@ const HTML_SOURCE = `<!doctype html>
     .replace(/'/g, '&#39;');
 
   function encodeB64Url(input) {
-    return btoa(unescape(encodeURIComponent(input))).replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/g, '');
+    const b64 = btoa(unescape(encodeURIComponent(input)));
+    return b64.split('+').join('-').split('/').join('_').replace(/=+$/, '');
   }
 
   function scoreBadge(ms, segments) {
@@ -486,7 +487,10 @@ const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.string
   },
 });
 
-const urlSafeBase64Encode = (str) => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+const urlSafeBase64Encode = (str) => {
+  const b64 = btoa(unescape(encodeURIComponent(str)));
+  return b64.split('+').join('-').split('/').join('_').replace(/=/g, '');
+};
 const urlSafeBase64Decode = (str) => {
   let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
   while (b64.length % 4) b64 += '=';

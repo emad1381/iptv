@@ -199,9 +199,9 @@ const HTML_SOURCE = `<!doctype html>
     list.innerHTML = state.channels.map((c, i) =>
       '<div class="row">'
       + '<div><div class="name" title="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</div><div class="muted tiny" dir="ltr" title="' + escapeHtml(c.url) + '">' + escapeHtml(c.url) + '</div>' + rowTestText(i) + '</div>'
-      + '<button class="btn" data-play="' + i + '">▶</button>'
-      + '<button class="btn" data-test="' + i + '">⏱</button>'
-      + '<button class="btn" data-del="' + i + '">✕</button>'
+      + '<button type="button" class="btn" data-play="' + i + '">▶</button>'
+      + '<button type="button" class="btn" data-test="' + i + '">⏱</button>'
+      + '<button type="button" class="btn" data-del="' + i + '">✕</button>'
       + '</div>'
     ).join('');
   }
@@ -277,17 +277,26 @@ const HTML_SOURCE = `<!doctype html>
 
   function playChannel(index) {
     const ch = state.channels[index];
-    if (!ch) return;
-    $('playingMeta').textContent = 'Now playing: ' + ch.name;
-    const proxied = '/proxy/' + encodeB64Url(ch.url) + '/' + encodeURIComponent(ch.name) + '.m3u8';
-    attachSmoothPlayback($('video'), proxied);
+    if (!ch || !ch.url) {
+      setState('invalid channel', 'bad');
+      return;
+    }
+  }
+
+    try {
+      $('playingMeta').textContent = 'Now playing: ' + ch.name;
+      const proxied = '/proxy/' + encodeB64Url(ch.url) + '/' + encodeURIComponent(ch.name || 'stream') + '.m3u8';
+      attachSmoothPlayback($('video'), proxied);
+    } catch (err) {
+      setState('play failed: ' + (err?.message || 'unknown error'), 'bad');
+    }
   }
 
   function attachSmoothPlayback(video, streamUrl) {
     destroyPlayer();
     $('qualityPill').textContent = 'Quality: auto';
 
-    if (Hls.isSupported()) {
+    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,

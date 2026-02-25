@@ -80,6 +80,7 @@ const HTML_SOURCE = `<!doctype html>
     .stack { display: grid; gap: .55rem; }
     .channels { margin-top: .8rem; display: grid; gap: .55rem; max-height: 420px; overflow: auto; padding-right: .2rem; }
     .row { border: 1px solid var(--line); border-radius: 12px; padding: .55rem; display: grid; grid-template-columns: 1fr auto auto auto; gap: .35rem; align-items: center; }
+    .row-main { cursor: pointer; }
     .name { font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .tiny { font-size: .78rem; }
     .status { margin-top: .7rem; display: flex; gap: .5rem; flex-wrap: wrap; }
@@ -198,10 +199,10 @@ const HTML_SOURCE = `<!doctype html>
     }
     list.innerHTML = state.channels.map((c, i) =>
       '<div class="row">'
-      + '<div><div class="name" title="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</div><div class="muted tiny" dir="ltr" title="' + escapeHtml(c.url) + '">' + escapeHtml(c.url) + '</div>' + rowTestText(i) + '</div>'
-      + '<button type="button" class="btn" data-play="' + i + '">▶</button>'
-      + '<button type="button" class="btn" data-test="' + i + '">⏱</button>'
-      + '<button type="button" class="btn" data-del="' + i + '">✕</button>'
+      + '<div class="row-main" data-play="' + i + '"><div class="name" title="' + escapeHtml(c.name) + '">' + escapeHtml(c.name) + '</div><div class="muted tiny" dir="ltr" title="' + escapeHtml(c.url) + '">' + escapeHtml(c.url) + '</div>' + rowTestText(i) + '</div>'
+      + '<button class="btn" data-play="' + i + '">▶</button>'
+      + '<button class="btn" data-test="' + i + '">⏱</button>'
+      + '<button class="btn" data-del="' + i + '">✕</button>'
       + '</div>'
     ).join('');
   }
@@ -277,26 +278,18 @@ const HTML_SOURCE = `<!doctype html>
 
   function playChannel(index) {
     const ch = state.channels[index];
-    if (!ch || !ch.url) {
-      setState('invalid channel', 'bad');
-      return;
-    }
-  }
-
-    try {
-      $('playingMeta').textContent = 'Now playing: ' + ch.name;
-      const proxied = '/proxy/' + encodeB64Url(ch.url) + '/' + encodeURIComponent(ch.name || 'stream') + '.m3u8';
-      attachSmoothPlayback($('video'), proxied);
-    } catch (err) {
-      setState('play failed: ' + (err?.message || 'unknown error'), 'bad');
-    }
+    if (!ch) return;
+    $('playingMeta').textContent = 'Now playing: ' + ch.name;
+    setState('loading stream...', 'warn');
+    const proxied = '/proxy/' + encodeB64Url(ch.url) + '/' + encodeURIComponent(ch.name) + '.m3u8';
+    attachSmoothPlayback($('video'), proxied);
   }
 
   function attachSmoothPlayback(video, streamUrl) {
     destroyPlayer();
     $('qualityPill').textContent = 'Quality: auto';
 
-    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+    if (Hls.isSupported()) {
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: true,
@@ -438,7 +431,7 @@ const HTML_SOURCE = `<!doctype html>
 
   async function addSearchResult(encodedPayload) {
     const payload = JSON.parse(decodeURIComponent(encodedPayload));
-    if (!payload?.name || !payload?.url) return;
+    if (!payload || !payload.name || !payload.url) return;
     state.channels.unshift({ name: payload.name, url: payload.url, test: null });
     renderChannels();
     try {
@@ -479,9 +472,18 @@ const HTML_SOURCE = `<!doctype html>
   $('video').addEventListener('playing', () => setState('playing', 'ok'));
   $('video').addEventListener('error', () => setState('video error', 'bad'));
 
-  applyTheme(localStorage.getItem(THEME_KEY) || 'night');
-  loadChannels();
-  startLatencyLoop();
+  try {
+    applyTheme(localStorage.getItem(THEME_KEY) || 'night');
+    loadChannels();
+    startLatencyLoop();
+  } catch (err) {
+    console.error('Bootstrap failed:', err);
+    const p = document.createElement('p');
+    p.className = 'tiny';
+    p.style.color = 'var(--bad)';
+    p.textContent = 'UI init error: ' + (err && err.message ? err.message : String(err));
+    document.body.prepend(p);
+  }
 })();
 </script>
 </body>

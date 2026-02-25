@@ -281,6 +281,7 @@ const HTML_SOURCE = `<!doctype html>
       setState('invalid channel', 'bad');
       return;
     }
+  }
 
     try {
       $('playingMeta').textContent = 'Now playing: ' + ch.name;

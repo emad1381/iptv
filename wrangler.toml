@@ -1,0 +1,17 @@
+name = "iptv-worker-player"
+main = "src/index.js"
+compatibility_date = "2026-06-30"
+workers_dev = true
+account_id = "0bed96e6d270f7a4476a09f37a38370e"
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "iptv_db"
+database_name = "iptv_db"
+database_id = "7bdf2891-2507-4cf0-8880-df90ec4e55a4"
+
+[[routes]]
+pattern = "iptv.nitroping.ir/*"
+zone_name = "nitroping.ir"
